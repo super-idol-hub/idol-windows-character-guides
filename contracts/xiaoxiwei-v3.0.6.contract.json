@@ -1,6 +1,7 @@
 {
-  "schemaVersion": 1,
-  "contractId": "xiaoxiwei-windows-character-v3.0.6",
+  "schemaVersion": 2,
+  "contractId": "xiaoxiwei-windows-character-v3.0.6-guide-r2",
+  "guideRevision": "2026-07-23",
   "policy": "default-deny-allowlist-only",
   "language": "zh-CN",
   "canonicalTemplate": {
@@ -16,9 +17,37 @@
       "product-facing identity strings and icon",
       "costume and skin artwork",
       "action choreography and action-facing labels while preserving row semantics",
-      "idol-specific public social-feed target without changing monitor behavior"
+      "idol-specific public social-feed target without changing monitor behavior",
+      "the two mandatory organization extensions declared below"
     ],
     "everythingElse": "immutable unless the project owner explicitly approves a numbered protocol exception"
+  },
+  "mandatoryOrganizationExtensions": {
+    "GUIDE-EXT-001-EMBED-ALL-OFFICIAL-SKINS": {
+      "required": true,
+      "oneExecutablePerIdolProject": true,
+      "allReleaseManifestOfficialSkinsEmbeddedAsAssemblyResources": true,
+      "officialSkinsSwitchableFromOneSkinMenuInOneProcess": true,
+      "officialSiblingSkinsDirectoryRequired": false,
+      "multipleOfficialExecutablesProhibited": true,
+      "optionalThirdPartySkinApiV1CompatibilityMayRemain": true
+    },
+    "GUIDE-EXT-002-CURRENT-USER-AUTOSTART": {
+      "required": true,
+      "menuLabel": "开机自启",
+      "menuPlacement": "immediately below the public-feed manual-check item",
+      "firstNormalRunDefaultEnabled": true,
+      "scope": "current Windows user only",
+      "registryPath": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "registryValueName": "stable product-specific name",
+      "registryCommand": "quoted current Application.ExecutablePath",
+      "disableBehavior": "delete only this product's current-user Run value and persist the disabled choice",
+      "pathRefreshBehavior": "when enabled, normal startup or re-enable idempotently updates the value to the current executable path",
+      "adminRightsRequired": false,
+      "forbiddenMechanisms": ["HKLM", "scheduled task", "Windows service", "Startup folder shortcut", "administrator elevation"],
+      "selfTestOrQaRegistryMutation": false,
+      "failureBehavior": "do not interrupt the character runtime; leave the menu state consistent and report a concise local error"
+    }
   },
   "baselineIntegrity": {
     "baselineCommitMustBeReachable": true,
@@ -32,8 +61,8 @@
     ],
     "allowedPathAndEditKinds": [
       {"paths": ["README.md", "CHANGELOG.md", "RELEASE_NOTES.md", "PROJECT-MANIFEST.json", "identity-replacements.json", "docs/**"], "allowed": "product identity, character description, rights text, replacement evidence and user documentation"},
-      {"paths": ["source/standalone/xiaoxiwei/XiaoXiWeiPet.cs"], "allowed": "assembly/product identity string literals, namespace/resource/mutex/log identifier tokens, product-facing action label string literals, trusted public-feed identity string literals and built-in skin metadata string literals only"},
-      {"paths": ["source/standalone/xiaoxiwei/build.ps1", "source/standalone/xiaoxiwei/build_skin.ps1", "source/standalone/xiaoxiwei/package_project.ps1"], "allowed": "exact project slug, path, filename, resource name, icon, version, official skin list and release-name token or string replacements only"},
+      {"paths": ["source/standalone/xiaoxiwei/XiaoXiWeiPet.cs"], "allowed": "identity and product-facing literal/token replacements plus only the catalog, resource loading, menu and persistence code required by GUIDE-EXT-001 and the current-user Run-value code required by GUIDE-EXT-002; animation protocols, state values, timing and input priority remain frozen"},
+      {"paths": ["source/standalone/xiaoxiwei/build.ps1", "source/standalone/xiaoxiwei/build_skin.ps1", "source/standalone/xiaoxiwei/package_project.ps1", "source/standalone/xiaoxiwei/package_single_exe.ps1"], "allowed": "identity/path/version replacements plus only the per-official-skin validation, unique resource linking and one-EXE packaging connections required by GUIDE-EXT-001"},
       {"paths": ["source/standalone/xiaoxiwei/build_hd_frames.py", "source/standalone/xiaoxiwei/validate_action_palette.py"], "allowed": "character action-source filename strings, declarative row-label strings, approved character palette-anchor literals and QA title strings only; control flow, calculations and protocol constants remain byte-identical"},
       {"paths": ["source/standalone/xiaoxiwei/*.ico"], "allowed": "approved character icon only; private visual source strips, generated frames and QA artifacts stay in ignored work/output directories"},
       {"paths": ["skin-pack-template/**"], "allowed": "example product identity and character-facing documentation only"},
@@ -44,12 +73,15 @@
       "baselineBlobSource": "git show e9b77f9bb106c8e83c3977e853b7f9eba9e6c1bc:<repository-relative-path>",
       "immutablePathRule": "every tracked path outside allowedPathAndEditKinds must be byte-identical to the baseline blob; deletion, rename, replacement and equivalent rewrite all fail",
       "requiredReplacementManifest": "identity-replacements.json",
+      "requiredProtocolExtensionManifest": "protocol-extensions.json",
       "replacementManifestRequiredFields": ["path", "kind", "baselineValue", "replacementValue", "reason"],
       "allowedTextReplacementKinds": ["product-identity-string", "product-identity-token", "public-feed-string", "action-label-string", "skin-metadata-string", "asset-filename-string", "declarative-row-label-string", "approved-palette-anchor-literal", "qa-title-string", "release-history-filename-list"],
-      "inverseReplacementVerification": "apply the exact inverse of every declared text replacement, then require SHA-256 equality with the corresponding baseline blob; any unmatched diff hunk fails",
-      "forbiddenReplacementTargets": ["operators", "control flow", "method bodies except allowed literal or token sites", "protocol constants", "row numbers", "frame counts", "duration arrays", "state values", "input priority", "safety limits", "build or QA algorithms"],
+      "inverseReplacementVerification": "apply the exact inverse of every declared identity replacement and exclude only hunks fully mapped to GUIDE-EXT-001 or GUIDE-EXT-002 in protocol-extensions.json; the remaining content must equal the baseline blob and any unmatched diff hunk fails",
+      "forbiddenReplacementTargets": ["unregistered operators or control flow", "method bodies outside exact registered GUIDE-EXT-001 and GUIDE-EXT-002 regions", "protocol constants", "row numbers", "frame counts", "duration arrays", "state values", "input priority", "safety limits", "build or QA algorithms outside registered extension regions"],
       "iconVerification": "each changed ICO must be listed with approved source, output path and SHA-256 in identity-replacements.json",
       "generatedVisualPolicy": "private source art, generated PNG frames, motion meshes and QA renders are outputs or ignored work artifacts; they do not authorize tracked runtime or algorithm changes",
+      "protocolExtensionManifestRequiredFields": ["extensionId", "path", "symbolOrRegion", "changePurpose", "qaEvidence"],
+      "approvedProtocolExtensionIds": ["GUIDE-EXT-001-EMBED-ALL-OFFICIAL-SKINS", "GUIDE-EXT-002-CURRENT-USER-AUTOSTART"],
       "unmatchedDiffHunksAllowed": false
     },
     "templateMigrationRules": [
@@ -60,6 +92,18 @@
         "frozenBehavior": "history collection, SHA-256 calculation, previous-version archival algorithm and all other packaging behavior remain unchanged",
         "fromSecondRelease": "archive the immediately previous release before replacing 最新版 and include only versions actually published by this idol project",
         "copyXiaoXiWeiHistoricalExecutables": false
+      },
+      {
+        "id": "GUIDE-EXT-001-EMBED-ALL-OFFICIAL-SKINS",
+        "reason": "every official skin must be available from one executable without a sibling official skins directory",
+        "allowedChange": "add a bounded embedded-skin resource catalog and loader, link every validated official skin archive with a unique assembly resource name, expose all official entries in the existing skin menu and package one executable",
+        "frozenBehavior": "skin API v1 data contract, 24-row and 176-frame protocol, motion format, safety validation, atomic transition, timing, state values and input priority remain unchanged"
+      },
+      {
+        "id": "GUIDE-EXT-002-CURRENT-USER-AUTOSTART",
+        "reason": "every character must expose a user-controlled per-user startup option",
+        "allowedChange": "add one context-menu item and bounded HKCU Run-value read, upsert and delete behavior using the current quoted executable path",
+        "frozenBehavior": "no administrator elevation, scheduled task, service, HKLM write, background helper or self-test/QA registry mutation"
       }
     ],
     "frozenSymbolsAndBehaviors": [
@@ -76,9 +120,9 @@
       "IdleActionStates and IdleActionWeights",
       "archive validation and safety limits",
       "input priority and persistent-state advancement",
-      "build, self-test, QA and packaging algorithms"
+      "build, self-test, QA and packaging algorithms except the exact bounded connections required by GUIDE-EXT-001 and GUIDE-EXT-002"
     ],
-    "frozenGuideContract": "contracts/xiaoxiwei-v3.0.6.contract.json must be copied or referenced unchanged; editing the contract to make a divergent implementation pass is prohibited",
+    "frozenGuideContract": "this schemaVersion 2 guide contract must be copied or referenced unchanged by idol projects; only this guide repository may revise the organization contract, and project-local edits made to pass a divergent implementation are prohibited",
     "equivalentRewriteAllowed": false
   },
   "runtime": {
@@ -89,10 +133,11 @@
     "compilerArguments": ["/target:winexe", "/optimize+", "/debug-", "/platform:anycpu", "/langversion:5", "/codepage:65001"],
     "assemblyReferences": ["System.dll", "System.Core.dll", "System.Drawing.dll", "System.IO.Compression.dll", "System.Windows.Forms.dll"],
     "entryPointThreading": "STAThread",
-    "embeddedFrameResource": "XiaoXiWei.Standalone.Frames.zip",
+    "embeddedFrameResources": "one uniquely named assembly manifest resource for every official skin in the release manifest",
+    "embeddedOfficialSkinCatalogRequired": true,
     "target": "winexe",
     "platform": "anycpu",
-    "output": "single-file Windows EXE with built-in frame archive embedded as a manifest resource",
+    "output": "one single-file Windows EXE with every official skin frame-and-motion archive embedded as a manifest resource",
     "applicationLocalRuntimeDependencies": [],
     "systemPrerequisites": ["Windows", ".NET Framework 4.x system runtime"],
     "defaultDeveloper": "Anbunengsi",
@@ -108,6 +153,24 @@
     "topMostToggle": true,
     "pauseToggle": true,
     "ctrlQExit": true
+  },
+  "autostart": {
+    "extensionId": "GUIDE-EXT-002-CURRENT-USER-AUTOSTART",
+    "required": true,
+    "menuLabel": "开机自启",
+    "menuPlacement": "immediately after the public-feed manual-check item",
+    "firstNormalRunDefaultEnabled": true,
+    "registryHive": "HKEY_CURRENT_USER",
+    "registrySubKey": "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+    "valueName": "stable product-specific name",
+    "valueData": "quoted current Application.ExecutablePath",
+    "enableOperation": "idempotent create or update",
+    "disableOperation": "delete only the product-specific value",
+    "disabledChoicePersisted": true,
+    "pathMoveRefreshRequired": true,
+    "administratorRightsRequired": false,
+    "selfTestOrQaMutationAllowed": false,
+    "runtimeFailureMustNotCrashCharacter": true
   },
   "applicationManifest": {
     "requestedExecutionLevel": "asInvoker",
@@ -274,7 +337,7 @@
   },
   "skinApi": {
     "apiVersion": "1",
-    "directory": "skins/<id>/",
+    "directory": "skins/<id>/ for optional third-party compatibility only",
     "folderNameMustEqualId": true,
     "manifest": "skin.xml",
     "archive": "frames.zip",
@@ -306,6 +369,18 @@
     "failureBehavior": "silently skip invalid external skin and fall back to built-in skin",
     "candidateValidationBeforeSwap": true,
     "atomicCacheSwap": true,
+    "officialDelivery": {
+      "extensionId": "GUIDE-EXT-001-EMBED-ALL-OFFICIAL-SKINS",
+      "allReleaseManifestOfficialSkinsEmbeddedInOneExe": true,
+      "officialSkinCountMustEqualReleaseManifestCount": true,
+      "officialSkinIdsMustBeUnique": true,
+      "officialAssemblyResourceNamesMustBeUnique": true,
+      "allOfficialSkinsListedInOneSkinMenu": true,
+      "skinChoicePersistsAcrossRestart": true,
+      "officialSiblingSkinsDirectoryRequired": false,
+      "officialSkinsMayBeSplitAcrossExecutables": false,
+      "optionalThirdPartySkinDoesNotCountAsOfficialDelivery": true
+    },
     "officialMotionPackage": {
       "required": true,
       "container": "the same frames.zip",
@@ -366,16 +441,20 @@
   },
   "requiredBuildAndQa": {
     "buildPipelines": {
-      "builtInExecutable": {
-        "orchestrator": "build.ps1",
-        "internalOrder": ["build_hd_frames.py", "validate_action_palette.py", "build_motion_fields.py", "csc.exe"]
+      "eachOfficialSkinArchive": {
+        "internalOrder": ["build_hd_frames.py", "validate_action_palette.py", "build_motion_fields.py", "archive validation"]
       },
-      "eachOfficialExternalSkin": {
+      "singleExecutable": {
+        "orchestrator": "build.ps1 or package_single_exe.ps1 called by build.ps1",
+        "internalOrder": ["validate every official skin archive", "assign unique assembly resource names", "link every official archive", "csc.exe"],
+        "outputCount": 1
+      },
+      "optionalThirdPartySkin": {
         "orchestrator": "build_skin.ps1",
         "internalOrder": ["build_hd_frames.py", "build_motion_fields.py", "pack_external_skin.py"]
       },
-      "afterBothBuilds": ["render_runtime_smoothing_qa.py and executable QA", "package_project.ps1 after all required QA has passed"],
-      "forbiddenInterpretation": "do not run the two internal pipelines as one flattened global sequence and do not invoke pack_external_skin.py twice"
+      "afterBuilds": ["render_runtime_smoothing_qa.py and executable QA", "one-EXE packaging after all required QA has passed"],
+      "forbiddenInterpretation": "do not split official skins into multiple executables and do not use the optional third-party package as a substitute for embedding an official skin"
     },
     "qaPipeline": [
       "render_runtime_smoothing_qa.py",
@@ -390,6 +469,11 @@
     "motionFieldLoaded": true,
     "ghostFreeSinglePoseOwner": true,
     "skinTransitionRenderValid": true,
+    "embeddedOfficialSkinCatalogValid": true,
+    "embeddedOfficialSkinCountMatchesReleaseManifest": true,
+    "crossOfficialSkinTransitionRenderValid": true,
+    "officialSkinsWorkWithoutSiblingSkinsDirectory": true,
+    "autostartQaRequired": true,
     "dragReactionContractValid": true,
     "lookTrackingContractValid": true,
     "visualQaRequired": true,
@@ -414,14 +498,23 @@
       "skinTransitionWholeCanvasCardFlip": false,
       "skinTransitionTopToBottomReveal": true,
       "skinTransitionFinalPoseValid": true,
+      "embeddedOfficialSkinCatalogValid": true,
+      "embeddedOfficialSkinCountMatchesReleaseManifest": true,
+      "crossOfficialSkinTransitionRenderValid": true,
+      "officialSkinsWorkWithoutSiblingSkinsDirectory": true,
+      "autostartConfigurationPresent": true,
+      "selfTestDidNotModifyRegistry": true,
       "fourKActiveCycleCacheFits": true
     },
     "requiredEvidenceArtifacts": [
       "baseline-proof.json",
       "identity-replacements.json",
+      "protocol-extensions.json",
       "frame-build-report.json",
       "motion-build-report.json",
-      "skin-pack-report.json for every official external skin",
+      "skin-pack-report.json for every official skin before embedding",
+      "embedded-skin-catalog-report.json proving release-manifest equality and per-skin decode",
+      "autostart-qa.json proving HKCU-only idempotent enable, disable, re-enable, path refresh and no self-test/QA registry mutation",
       "self-test-report.json with ok=true and errors=[]",
       "qa-window launch and clean-exit log plus screenshot",
       "125-percent, 225-percent and 400-percent screenshots on dark and light backgrounds",
@@ -431,35 +524,41 @@
       "PROJECT-MANIFEST.json"
     ],
     "guideLevelEvidence": {
-      "notGeneratedByFrozenV306Scripts": ["baseline-proof.json", "identity-replacements.json", "qa-window launch and clean-exit log", "clean-windows-smoke-test.json"],
-      "producer": "the implementing AI or independent release QA after the frozen build steps; absence is a failure, not permission to edit the baseline scripts",
+      "notGeneratedByFrozenV306Scripts": ["baseline-proof.json", "identity-replacements.json", "protocol-extensions.json", "embedded-skin-catalog-report.json", "autostart-qa.json", "qa-window launch and clean-exit log", "clean-windows-smoke-test.json"],
+      "producer": "the implementing AI or independent release QA after the frozen build steps; absence is a failure and does not permit changes outside registered extension regions",
       "schemas": {
         "baseline-proof.json": {"schemaVersion": 1, "required": ["templateRepository", "templateTag", "baselineCommit", "headCommit", "baselineReachable", "changedPaths", "pathRuleMatchCounts", "unmatchedPaths", "ambiguousPaths", "result"]},
         "identity-replacements.json": {"schemaVersion": 1, "required": ["baselineCommit", "replacements", "inverseReplacementSha256Checks", "unmatchedDiffHunks", "result"]},
+        "protocol-extensions.json": {"schemaVersion": 1, "required": ["baselineCommit", "extensions", "unmatchedDiffHunks", "result"]},
+        "embedded-skin-catalog-report.json": {"schemaVersion": 1, "required": ["releaseManifestSkinIds", "embeddedSkinIds", "resourceNames", "perSkinFrameCounts", "perSkinMotionValidation", "crossSkinTransitionValid", "worksWithoutSiblingSkinsDirectory", "result"]},
+        "autostart-qa.json": {"schemaVersion": 1, "required": ["registryHive", "registrySubKey", "valueName", "quotedCurrentExecutablePath", "enableIdempotent", "disableRemovedOnlyProductValue", "reenableValid", "pathRefreshValid", "selfTestRegistryMutation", "qaWindowRegistryMutation", "result"]},
         "clean-windows-smoke-test.json": {"schemaVersion": 1, "required": ["windowsVersion", "dotNetFrameworkVersion", "executablePath", "executableSha256", "launchMethod", "started", "visible", "cleanExit", "result"]}
       }
     },
     "textOnlyClaimsAreEvidence": false
   },
   "releaseLayout": {
-    "projectRootRequiredEntries": ["README.md", "CHANGELOG.md", "RELEASE_NOTES.md", "PROJECT-MANIFEST.json", "identity-replacements.json", "docs/", "source/", "skin-pack-template/", "releases/", "qa/"],
+    "projectRootRequiredEntries": ["README.md", "CHANGELOG.md", "RELEASE_NOTES.md", "PROJECT-MANIFEST.json", "identity-replacements.json", "protocol-extensions.json", "docs/", "source/", "skin-pack-template/", "releases/", "qa/"],
     "latestDirectory": "releases/最新版/",
-    "latestRequiredEntries": ["<displayName>.exe", "skins/", "README.md", "使用说明.md", "皮肤包接口.md", "SHA256SUMS.txt"],
-    "officialExternalSkinEntries": ["skins/<id>/skin.xml", "skins/<id>/frames.zip"],
+    "latestRequiredEntries": ["<displayName>.exe", "README.md", "使用说明.md", "SHA256SUMS.txt"],
+    "officialSiblingSkinEntriesAllowed": false,
+    "optionalThirdPartyTemplateEntries": ["skin-pack-template/skin.xml", "skin-pack-template/README.md"],
     "historyDirectory": "releases/历史版本/",
     "historyRule": "apply MIGRATION-001-RELEASE-HISTORY: first release has an empty project history; from the second release onward, before replacing 最新版 archive only this idol project's actual previous product EXE; never copy XiaoXiWei binaries",
     "fullArchive": "releases/<displayName>-完整包.zip",
     "projectManifest": {
-      "schemaVersion": 1,
-      "requiredFields": ["packagedAt", "developer", "executable.path", "executable.bytes", "executable.sha256", "releaseArchive.path", "releaseArchive.bytes", "releaseArchive.sha256", "skins"]
+      "schemaVersion": 2,
+      "requiredFields": ["packagedAt", "developer", "executable.path", "executable.bytes", "executable.sha256", "releaseArchive.path", "releaseArchive.bytes", "releaseArchive.sha256", "embeddedOfficialSkins", "autostart"]
     },
     "hashPolicy": "SHA256SUMS.txt covers every file in releases/最新版 except the checksum file itself",
     "singleFileSemantics": {
-      "builtInSkinEmbeddedInExe": true,
-      "officialExternalSkinsEmbeddedInExe": false,
+      "allOfficialSkinsEmbeddedInExe": true,
+      "officialSkinCountEqualsReleaseManifestCount": true,
       "applicationLocalDllsRequired": false,
-      "exeAloneRunsWithBuiltInSkin": true,
-      "externalSkinsRequireSiblingSkinsDirectory": true,
+      "exeAloneRunsWithEveryOfficialSkin": true,
+      "officialSkinsRequireSiblingSkinsDirectory": false,
+      "officialSkinsSplitAcrossMultipleExecutables": false,
+      "fullArchiveContainsExactlyOneExecutable": true,
       "windowsAndSystemDotNetStillRequired": true
     }
   },
@@ -474,6 +573,9 @@
     "WPF",
     "video or GIF playback instead of the state machine",
     "application-local runtime DLL dependencies",
+    "separate official-skin executables",
+    "a sibling official skins directory required for normal operation",
+    "missing or administrator-level autostart implementation",
     "whole-frame alpha cross-fade",
     "card-flip skin transition",
     "fewer than 24 rows or fewer than 176 archived frames",
