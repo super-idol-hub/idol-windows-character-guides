@@ -140,7 +140,7 @@
     "output": "one single-file Windows EXE with every official skin frame-and-motion archive embedded as a manifest resource",
     "applicationLocalRuntimeDependencies": [],
     "systemPrerequisites": ["Windows", ".NET Framework 4.x system runtime"],
-    "defaultDeveloper": "Anbunengsi",
+    "defaultDeveloper": "Anbunensi",
     "defaultScale": 2.25,
     "minimumScale": 1.25,
     "maximumScale": 4.0,
@@ -541,6 +541,16 @@
     "projectRootRequiredEntries": ["README.md", "CHANGELOG.md", "RELEASE_NOTES.md", "PROJECT-MANIFEST.json", "identity-replacements.json", "protocol-extensions.json", "docs/", "source/", "skin-pack-template/", "releases/", "qa/"],
     "latestDirectory": "releases/最新版/",
     "latestRequiredEntries": ["<displayName>.exe", "README.md", "使用说明.md", "SHA256SUMS.txt"],
+    "userDocumentation": {
+      "file": "使用说明.md",
+      "audience": "end users only",
+      "requiredTopics": ["launch", "basic interactions", "skin menu switching", "autostart toggle", "exit"],
+      "forbiddenTopics": ["skin interface", "Skin API", "skin.xml", "frames.zip", "external skins directory installation", "developer integration tutorial"]
+    },
+    "developerIdentity": {
+      "requiredValue": "Anbunensi",
+      "company": ""
+    },
     "officialSiblingSkinEntriesAllowed": false,
     "optionalThirdPartyTemplateEntries": ["skin-pack-template/skin.xml", "skin-pack-template/README.md"],
     "historyDirectory": "releases/历史版本/",
